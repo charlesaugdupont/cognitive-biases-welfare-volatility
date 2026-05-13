@@ -9,7 +9,7 @@ import os
 # constants
 THETA = 0.88
 ETA = 0.88
-BETA = 0.95
+BETA = 0.999
 P_H_INCREASE = 0.95
 P_H_DECREASE = 0.05
 SEED = 42
