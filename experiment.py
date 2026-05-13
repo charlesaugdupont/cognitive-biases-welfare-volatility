@@ -56,6 +56,12 @@ def process_row(row, n_steps, model, grid_size, initial_states):
     # unpack parameter set
     alpha, gamma, lambduh, rate, A = row
 
+    func = probability_weighting
+    if model == "cpt_revised_prelec":
+        func = probability_weighting_prelec
+    elif model == "cpt_revised_ge":
+        func = probability_weighting_goldstein_einhorn
+
     # compute policy
     policy, params = compute_optimal_policy(
         model=model,
@@ -69,7 +75,8 @@ def process_row(row, n_steps, model, grid_size, initial_states):
         rate=rate,
         A=A,
         theta=THETA if model in ["pt", "cpt"] else 1.0,
-        beta=BETA
+        beta=BETA,
+        weighting_function=func
     )
 
     # run agent simulations
@@ -103,8 +110,8 @@ if __name__ == "__main__":
     GRID_SIZE = args.grid_size
     
     # check that a valid model is passed
-    if MODEL not in ["cpt", "pt", "eut"]:
-        raise Exception(f"Model must be one of: 'cpt', 'pt', 'eut'")
+    if MODEL not in ["cpt_revised_kt", "cpt_revised_prelec", "cpt_revised_ge", "eut_revised", "pt_revised"]:
+        raise Exception(f"Model name is invalid.")
     
     # load initial agent states
     initial_states_path = "initial_states.pickle"
