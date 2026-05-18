@@ -99,7 +99,7 @@ def process_row(row, n_steps, model, grid_size, initial_states):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n-steps", type=int, default=5000)
-    parser.add_argument("--max-workers", type=int, default=6)
+    parser.add_argument("--max-workers", type=int, default=10)
     parser.add_argument("--model", type=str, default="cpt")
     parser.add_argument("--grid-size", type=int, default=200)
     args = parser.parse_args()
