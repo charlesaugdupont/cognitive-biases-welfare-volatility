@@ -25,3 +25,6 @@ eut_sen_welfare
 pt_gini
 pt_mean_util
 pt_sen_welfare
+*_gini
+*_util
+*_welfare
