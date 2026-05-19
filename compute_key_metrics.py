@@ -3,7 +3,7 @@ from tqdm.auto import tqdm
 from utils import *
 from experiment import *
 
-def key_metrics(model_str,model_dir):
+def key_metrics(model_dir):
     mean = []
     gini = []
     sen = []
@@ -28,13 +28,13 @@ def key_metrics(model_str,model_dir):
             params = ((p["alpha"], p["rate"], p["A"]))
         P.append(params)
     
-    with open(f"{model_dir}/{model_str}_sen_welfare", "wb") as f:
+    with open(f"{model_dir}/sen_welfare", "wb") as f:
         pickle.dump(sen, f)
-    with open(f"{model_dir}/{model_str}_gini", "wb") as f:
+    with open(f"{model_dir}/gini", "wb") as f:
         pickle.dump(gini, f)
-    with open(f"{model_dir}/{model_str}_mean_util", "wb") as f:
+    with open(f"{model_dir}/mean_util", "wb") as f:
         pickle.dump(mean, f)
-    with open(f"{model_dir}/{model_str}_params", "wb") as f:
+    with open(f"{model_dir}/params", "wb") as f:
         pickle.dump(P, f)
 
 if __name__ == "__main__":
@@ -63,4 +63,4 @@ if __name__ == "__main__":
         model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
         model_dir = f"data/{MODEL}/{model_str}"
     
-    key_metrics(model_str, model_dir)
+    key_metrics(model_dir)

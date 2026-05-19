@@ -103,5 +103,5 @@ if __name__ == "__main__":
         process_func = partial(process_file, directory=model_dir+"/raw")
         results = list(tqdm(pool.imap(process_func, file_list), total=len(file_list)))
 
-    with open(f"{model_dir}/{model_str}_dominant_frequencies_amplitudes.pickle", "wb") as f:
+    with open(f"{model_dir}/dominant_frequencies_amplitudes.pickle", "wb") as f:
         pickle.dump(results, f)
