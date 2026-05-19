@@ -51,15 +51,15 @@ def unpack_and_dequantize(data: np.ndarray, grid_size: int, dtype=np.uint16):
     else:
         raise ValueError("data must be an integer array.")
 
-def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta):
+def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta, func=None):
     # unpack parameter set
     alpha, gamma, lambduh, rate, A = row
 
-    func = probability_weighting
-    if model == "cpt_revised_prelec":
-        func = probability_weighting_prelec
-    elif model == "cpt_revised_ge":
-        func = probability_weighting_goldstein_einhorn
+    weighting_function = probability_weighting
+    if func == "prelec":
+        weighting_function = probability_weighting_prelec
+    elif func == "ge":
+        weighting_function = probability_weighting_goldstein_einhorn
 
     # compute policy
     policy, params = compute_optimal_policy(
@@ -75,7 +75,7 @@ def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta
         A=A,
         theta=THETA if model in ["pt", "cpt"] else 1.0,
         beta=beta,
-        weighting_function=func
+        weighting_function=weighting_function
     )
 
     # run agent simulations
@@ -149,6 +149,6 @@ if __name__ == "__main__":
 
     # construct set of samples and run simulations in parallel
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(process_row, row, N_STEPS, MODEL, GRID_SIZE, initial_states, raw_dir, BETA) for row in samples]
+        futures = [executor.submit(process_row, row, N_STEPS, MODEL, GRID_SIZE, initial_states, raw_dir, BETA, FUNC) for row in samples]
         for future in tqdm(as_completed(futures), total=len(futures)):
             output_file_name = future.result()

@@ -121,7 +121,7 @@ def compute_optimal_policy(
     beta,
     weighting_function
 ):
-    if model.startswith("pt_") or model.startswith("cpt_"):
+    if model in ["pt", "cpt"]:
         return value_iteration_pt_cpt(
             N,
             alpha,
