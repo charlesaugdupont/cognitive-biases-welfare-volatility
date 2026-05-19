@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="cpt")
     parser.add_argument("--grid-size", type=int, default=200)
     parser.add_argument("--beta", type=float, required=True)
-    parser.add_argument("--cpt-weight-function", type=float)
+    parser.add_argument("--cpt-weight-function", type=str)
     args = parser.parse_args()
 
     N_STEPS = args.n_steps
