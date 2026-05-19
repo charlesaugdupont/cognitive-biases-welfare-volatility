@@ -72,20 +72,36 @@ def process_file(f_name, directory, power_threshold_ratio=0.20, discard_steps=30
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="cpt")
-    parser.add_argument("--max-workers", type=int, default=6)
+    parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--beta", type=float, required=True)
+    parser.add_argument("--cpt-weight-function", type=str)
+    parser.add_argument("--max-workers", type=int, default=8)
     args = parser.parse_args()
 
     MAX_WORKERS = args.max_workers
+    BETA = args.beta
+    FUNC = args.cpt_weight_function
     MODEL = args.model
 
-    if not os.path.exists(MODEL):
-        raise Exception(f"Please perform experiments before running this script with: uv run experiment.py [--model] [--n-steps] [--max-workers]  [--grid-size]")
+    # check that a valid model is passed
+    if MODEL not in ["cpt", "eut", "pt"]:
+        raise Exception(f"Model name is invalid.")
     
-    file_list = os.listdir(MODEL)
+    if MODEL == "cpt":
+        if FUNC not in ["prelec", "kt", "ge"]:
+            raise Exception(f"CPT weighting function is missing or invalid.")
+        
+    if MODEL in ["eut", "pt"]:
+        model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
+        model_dir = f"data/{MODEL}/{model_str}" 
+    else:
+        model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
+        model_dir = f"data/{MODEL}/{model_str}"
+    
+    file_list = os.listdir(model_dir+"/raw")
     with Pool(MAX_WORKERS) as pool:
-        process_func = partial(process_file, directory=MODEL)
+        process_func = partial(process_file, directory=model_dir+"/raw")
         results = list(tqdm(pool.imap(process_func, file_list), total=len(file_list)))
 
-    with open(f"{MODEL}_dominant_frequencies_amplitudes.pickle", "wb") as f:
+    with open(f"{model_dir}/{model_str}_dominant_frequencies_amplitudes.pickle", "wb") as f:
         pickle.dump(results, f)

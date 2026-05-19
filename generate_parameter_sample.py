@@ -35,7 +35,7 @@ if __name__ == "__main__":
         else:
             scaled_samples[:, i] = samples[:, i] * (high - low) + low
 
-    save_path = f"{MODEL}_samples_revised.pickle"
+    save_path = f"data/{MODEL}/{MODEL}_samples.pickle"
     with open(save_path, "wb") as f:
         pickle.dump(scaled_samples, f)
 
