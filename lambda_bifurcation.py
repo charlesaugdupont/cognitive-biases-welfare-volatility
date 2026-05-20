@@ -1,4 +1,4 @@
-from experiment import quantize_and_pack, THETA, ETA, BETA, P_H_DECREASE, P_H_INCREASE, SEED
+from experiment import quantize_and_pack, THETA, ETA, P_H_DECREASE, P_H_INCREASE, SEED
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm.auto import tqdm
 from model import *
@@ -10,8 +10,8 @@ import os
 np.random.seed(SEED)
 random.seed(SEED)
 
-def process_row(row, n_steps, model, grid_size, initial_states):
-    alpha, gamma, lambduh, rate, A = row
+def process_row(row, n_steps, model_dir, grid_size, initial_states, beta):
+    alpha, rate, A, lambduh = row
 
     # compute optimal policy
     policy, params = value_iteration_pt_cpt(
@@ -25,7 +25,8 @@ def process_row(row, n_steps, model, grid_size, initial_states):
         rate=rate,
         A=A,
         theta=THETA,
-        beta=BETA
+        beta=beta,
+        weighting_function=probability_weighting
     )
 
     # run agent simulation
@@ -40,7 +41,7 @@ def process_row(row, n_steps, model, grid_size, initial_states):
         "storage_dtype_info": str(storage_dtype)
     }
 
-    output_file_name = os.path.join(model, f"{alpha}_{gamma}_{lambduh}_{rate}_{A}.pickle")
+    output_file_name = os.path.join(model_dir, f"{alpha}_{rate}_{A}_{lambduh}.pickle")
     with open(output_file_name, 'wb') as f:
         pickle.dump(result, f)
 
@@ -49,39 +50,34 @@ def process_row(row, n_steps, model, grid_size, initial_states):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n-steps", type=int, default=5000)
-    parser.add_argument("--max-workers", type=int, default=6)
-    parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--max-workers", type=int, default=10)
     parser.add_argument("--grid-size", type=int, default=200)
+    parser.add_argument("--beta", type=float, required=True)
     args = parser.parse_args()
 
     N_STEPS = args.n_steps
     MAX_WORKERS = args.max_workers
-    MODEL = args.model
     GRID_SIZE = args.grid_size
+    BETA = args.beta
+    MODEL = f"data/lambda_bifurcation/lambda_bifurcation_{str(BETA).split(".")[1]}/raw"
 
-    if MODEL != "lambda_bifurcation":
-        raise Exception("Model must be 'lambda_bifurcation'")
+
     if not os.path.exists(MODEL):
         os.makedirs(MODEL)
+    else:
+        raise Exception("lambda_bifurcation directory already exists!")
 
-    with open("initial_states.pickle", "rb") as f:
+    with open("data/initial_states.pickle", "rb") as f:
         initial_states = pickle.load(f)
 
     # identify PT simulations with average amplitude > 10
-    with open("pt_dominant_frequencies_amplitudes.pickle", "rb") as f:
+    with open(f"data/pt/pt_{str(BETA).split(".")[1]}/dominant_frequencies_amplitudes.pickle", "rb") as f:
         pt_data = pickle.load(f)
 
     THRESHOLD = 10
-    sims = [np.mean(x["amplitudes"]) for x in pt_data]
-    params = []
-    for idx, f_name in enumerate(os.listdir("pt")):
-        if sims[idx] > THRESHOLD:
-            with open(os.path.join("pt", f_name), "rb") as f:
-                res = pickle.load(f)
-            P = res["params"]
-            params.append((
-                P["alpha"], P["A"], P["rate"], P["lambda"]
-            ))
+    sims = np.array([np.mean(x["amplitudes"]) for x in pt_data])
+    with open(f"data/pt/pt_{str(BETA).split(".")[1]}/params", "rb") as f:
+        params = np.array(pickle.load(f))[sims>THRESHOLD][:,:-1]    
 
     # run a sweep of lambda values
     lambda_values = np.linspace(1, 2.5, 9)
@@ -89,10 +85,10 @@ if __name__ == "__main__":
     for p in params:
         for L in lambda_values:
             samples.append(
-                (p[0], 1, L, p[2], p[1])
+                (p[0], p[1], p[2], L)
             )
 
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(process_row, row, N_STEPS, MODEL, GRID_SIZE, initial_states) for row in samples]
+        futures = [executor.submit(process_row, row, N_STEPS, MODEL, GRID_SIZE, initial_states, BETA) for row in samples]
         for future in tqdm(as_completed(futures), total=len(futures)):
             output_file_name = future.result()
