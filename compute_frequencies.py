@@ -84,14 +84,14 @@ if __name__ == "__main__":
     MODEL = args.model
 
     # check that a valid model is passed
-    if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation"]:
+    if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
         raise Exception(f"Model name is invalid.")
     
     if MODEL == "cpt":
         if FUNC not in ["prelec", "kt", "ge"]:
             raise Exception(f"CPT weighting function is missing or invalid.")
         
-    if MODEL in ["eut", "pt", "lambda_bifurcation"]:
+    if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
         model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
         model_dir = f"data/{MODEL}/{model_str}" 
     else:

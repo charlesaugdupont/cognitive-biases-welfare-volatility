@@ -61,7 +61,6 @@ if __name__ == "__main__":
     BETA = args.beta
     MODEL = f"data/lambda_bifurcation/lambda_bifurcation_{str(BETA).split(".")[1]}/raw"
 
-
     if not os.path.exists(MODEL):
         os.makedirs(MODEL)
     else:
