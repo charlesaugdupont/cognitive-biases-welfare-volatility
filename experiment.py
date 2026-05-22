@@ -102,7 +102,7 @@ def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n-steps", type=int, default=5000)
-    parser.add_argument("--max-workers", type=int, default=10)
+    parser.add_argument("--max-workers", type=int, default=8)
     parser.add_argument("--model", type=str, default="cpt")
     parser.add_argument("--grid-size", type=int, default=200)
     parser.add_argument("--beta", type=float, required=True)
@@ -145,6 +145,8 @@ if __name__ == "__main__":
         output_dir = f"data/{MODEL}/{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
 
     raw_dir = output_dir + "/raw"
+    if not os.path.exists(raw_dir):
+        os.makedirs(raw_dir)
 
     # construct set of samples and run simulations in parallel
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
