@@ -53,7 +53,7 @@ def process_row(row, n_steps, model_dir, grid_size, initial_states, beta):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n-steps", type=int, default=5000)
-    parser.add_argument("--max-workers", type=int, default=8)
+    parser.add_argument("--max-workers", type=int, default=10)
     parser.add_argument("--grid-size", type=int, default=200)
     parser.add_argument("--beta", type=float, required=True)
     args = parser.parse_args()
@@ -79,8 +79,8 @@ if __name__ == "__main__":
 
     # simulation samples
     samples = []
-    for alpha in np.linspace(0.3, 0.7, 16):
-        for gamma in np.linspace(0.3, 0.9, 16):
+    for alpha in np.linspace(0.3, 0.8, 24):
+        for gamma in np.linspace(0.3, 0.9, 24):
             samples.append(
                 (alpha, RATE, A, LAMBDUH, gamma)
             )

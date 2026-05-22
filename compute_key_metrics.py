@@ -8,6 +8,7 @@ def key_metrics(model_dir):
     gini = []
     sen = []
     P = []
+    final_states = []
     data_dir = model_dir + "/raw"
     for f in tqdm(os.listdir(data_dir)):
         with open(os.path.join(data_dir, f), "rb") as file:
@@ -22,11 +23,14 @@ def key_metrics(model_dir):
         gini.append(g)
         sen.append(s)
         p = res["params"]
-        if "pt_" in model_dir:
+        if "pt_" in model_dir or "gamma_alpha" in model_dir:
             params = ((p["alpha"], p["rate"], p["A"], p["lambda"], p["gamma"]))
+        elif "lambda_bifurcation" in model_dir:
+            params = ((p["alpha"], p["rate"], p["A"], p["lambda"]))
         else:
             params = ((p["alpha"], p["rate"], p["A"]))
         P.append(params)
+        final_states.append((wealth, health))
     
     with open(f"{model_dir}/sen_welfare", "wb") as f:
         pickle.dump(sen, f)
@@ -36,6 +40,8 @@ def key_metrics(model_dir):
         pickle.dump(mean, f)
     with open(f"{model_dir}/params", "wb") as f:
         pickle.dump(P, f)
+    with open(f"{model_dir}/final_states", "wb") as f:
+        pickle.dump(final_states, f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -49,14 +55,14 @@ if __name__ == "__main__":
     FUNC = args.cpt_weight_function
 
     # check that a valid model is passed
-    if MODEL not in ["cpt", "eut", "pt"]:
+    if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
         raise Exception(f"Model name is invalid.")
     
     if MODEL == "cpt":
         if FUNC not in ["prelec", "kt", "ge"]:
             raise Exception(f"CPT weighting function is missing or invalid.")
 
-    if MODEL in ["eut", "pt"]:
+    if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
         model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
         model_dir = f"data/{MODEL}/{model_str}" 
     else:
