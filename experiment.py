@@ -55,6 +55,11 @@ def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta
     # unpack parameter set
     alpha, gamma, lambduh, rate, A = row
 
+
+    output_file_name = os.path.join(output_dir, f"{alpha}_{gamma}_{lambduh}_{rate}_{A}.pickle")
+    if os.path.exists(output_file_name):
+        return output_file_name
+
     weighting_function = probability_weighting
     if func == "prelec":
         weighting_function = probability_weighting_prelec
@@ -89,7 +94,6 @@ def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta
         "policy": policy.astype(np.uint8),
         "storage_dtype_info": str(storage_dtype)
     }
-    output_file_name = os.path.join(output_dir, f"{alpha}_{gamma}_{lambduh}_{rate}_{A}.pickle")
     with open(output_file_name, 'wb') as f:
         pickle.dump(result, f)
 
@@ -141,11 +145,6 @@ if __name__ == "__main__":
         output_dir = f"data/{MODEL}/{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
 
     raw_dir = output_dir + "/raw"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        os.makedirs(raw_dir)
-    else:
-        raise Exception(f"Output directory for '{output_dir}' model already exists!")
 
     # construct set of samples and run simulations in parallel
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
