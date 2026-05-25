@@ -11,6 +11,8 @@ def key_metrics(model_dir):
     final_states = []
     data_dir = model_dir + "/raw"
     for f in tqdm(os.listdir(data_dir)):
+        if ".DS_Store" in f:
+            continue
         with open(os.path.join(data_dir, f), "rb") as file:
             res = pickle.load(file)
         wealth = unpack_and_dequantize(res["wealth"][:,-1], 200)
