@@ -17,10 +17,11 @@ def process_file(f_name, directory, power_threshold_ratio=0.20, discard_steps=30
     with open(os.path.join(directory, f_name), "rb") as f:
         res = pickle.load(f)
 
-    grid_size = res["params"]["N"]
+    params = res["params"]
+    grid_size = params["N"]
     w = unpack_and_dequantize(res["wealth"][:, discard_steps:], grid_size=grid_size)
     h = unpack_and_dequantize(res["health"][:, discard_steps:], grid_size=grid_size)
-    u = utility(w, h, res["params"]["alpha"])
+    u = utility(w, h, params["alpha"])
 
     dominant_frequencies = np.full(w.shape[0], np.nan)
     dominant_amplitudes = np.full(w.shape[0], np.nan)
@@ -67,7 +68,8 @@ def process_file(f_name, directory, power_threshold_ratio=0.20, discard_steps=30
 
     return {
         "frequencies": dominant_frequencies, 
-        "amplitudes": dominant_amplitudes
+        "amplitudes": dominant_amplitudes,
+        "params": params
     }
 
 if __name__ == "__main__":
