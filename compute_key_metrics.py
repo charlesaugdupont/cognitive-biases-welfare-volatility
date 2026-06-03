@@ -25,7 +25,7 @@ def key_metrics(model_dir):
         gini.append(g)
         sen.append(s)
         p = res["params"]
-        if "pt_" in model_dir or "gamma_alpha" in model_dir:
+        if "pt_" in model_dir or "gamma_alpha" in model_dir or "gamma_sweep" in model_dir:
             params = ((p["alpha"], p["rate"], p["A"], p["lambda"], p["gamma"]))
         elif "lambda_bifurcation" in model_dir:
             params = ((p["alpha"], p["rate"], p["A"], p["lambda"]))
@@ -47,28 +47,36 @@ def key_metrics(model_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--beta", type=float, required=True)
+    parser.add_argument("--model", type=str, required=False)
+    parser.add_argument("--beta", type=float, required=False, default=0.0)
     parser.add_argument("--cpt-weight-function", type=str)
+    parser.add_argument("--data-dir", type=str, required=False, default="")
     args = parser.parse_args()
 
     MODEL = args.model
     BETA = args.beta
     FUNC = args.cpt_weight_function
+    DATA_DIR = args.data_dir
 
-    # check that a valid model is passed
-    if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
-        raise Exception(f"Model name is invalid.")
+    if DATA_DIR:
+        model_dir = DATA_DIR
     
-    if MODEL == "cpt":
-        if FUNC not in ["prelec", "kt", "ge"]:
-            raise Exception(f"CPT weighting function is missing or invalid.")
-
-    if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
-        model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
-        model_dir = f"data/{MODEL}/{model_str}" 
     else:
-        model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
-        model_dir = f"data/{MODEL}/{model_str}"
+        if BETA not in [0.95, 0.999]:
+            raise Exception(f"Beta value is invalid.")
+        
+        if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
+            raise Exception(f"Model name is invalid.")
+        
+        if MODEL == "cpt":
+            if FUNC not in ["prelec", "kt", "ge"]:
+                raise Exception(f"CPT weighting function is missing or invalid.")
+
+        if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
+            model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
+            model_dir = f"data/{MODEL}/{model_str}" 
+        else:
+            model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
+            model_dir = f"data/{MODEL}/{model_str}"
     
     key_metrics(model_dir)
