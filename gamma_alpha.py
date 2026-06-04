@@ -56,13 +56,18 @@ if __name__ == "__main__":
     parser.add_argument("--max-workers", type=int, default=10)
     parser.add_argument("--grid-size", type=int, default=200)
     parser.add_argument("--beta", type=float, required=True)
+    parser.add_argument("--sweep-gamma", type=str, default="true")
     args = parser.parse_args()
 
     N_STEPS = args.n_steps
     MAX_WORKERS = args.max_workers
     GRID_SIZE = args.grid_size
     BETA = args.beta
-    MODEL = f"data/gamma_alpha/gamma_alpha_{str(BETA).split(".")[1]}/raw"
+    SWEEP_GAMMA = bool(args.sweep_gamma == "true")
+    if SWEEP_GAMMA:
+        MODEL = f"data/gamma_alpha/cpt_{str(BETA).split(".")[1]}/raw"
+    else:
+        MODEL = f"data/gamma_alpha/pt_{str(BETA).split(".")[1]}/raw"
 
     if not os.path.exists(MODEL):
         os.makedirs(MODEL)
@@ -75,14 +80,20 @@ if __name__ == "__main__":
     # constants
     A = 0.8
     LAMBDUH = 2.5
-    RATE = 4
+    RATE = 4.0
 
     # simulation samples
     samples = []
-    for alpha in np.linspace(0.3, 0.8, 24):
-        for gamma in np.linspace(0.3, 0.9, 24):
+    if SWEEP_GAMMA:
+        for alpha in np.linspace(0.3, 0.8, 24):
+            for gamma in np.linspace(0.1, 0.8, 24):
+                samples.append(
+                    (alpha, RATE, A, LAMBDUH, gamma)
+                )
+    else:
+        for alpha in np.linspace(0.3, 0.8, 24):
             samples.append(
-                (alpha, RATE, A, LAMBDUH, gamma)
+                (alpha, RATE, A, LAMBDUH, 1.0)
             )
 
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
