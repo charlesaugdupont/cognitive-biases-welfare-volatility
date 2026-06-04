@@ -85,8 +85,8 @@ if __name__ == "__main__":
     # simulation samples
     samples = []
     if SWEEP_GAMMA:
-        for alpha in np.linspace(0.3, 0.8, 24):
-            for gamma in np.linspace(0.1, 0.8, 24):
+        for alpha in np.linspace(0.2, 0.8, 24):
+            for gamma in np.linspace(0.1, 0.95, 24):
                 samples.append(
                     (alpha, RATE, A, LAMBDUH, gamma)
                 )
