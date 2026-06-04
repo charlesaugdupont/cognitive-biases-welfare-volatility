@@ -75,30 +75,35 @@ def process_file(f_name, directory, power_threshold_ratio=0.20, discard_steps=30
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--beta", type=float, required=True)
+    parser.add_argument("--beta", type=float, required=False, default=0.95)
     parser.add_argument("--cpt-weight-function", type=str)
     parser.add_argument("--max-workers", type=int, default=8)
+    parser.add_argument("--data-dir", required=False, default="")
     args = parser.parse_args()
 
     MAX_WORKERS = args.max_workers
     BETA = args.beta
     FUNC = args.cpt_weight_function
     MODEL = args.model
+    DATA_DIR = args.data_dir
 
-    # check that a valid model is passed
-    if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
-        raise Exception(f"Model name is invalid.")
-    
-    if MODEL == "cpt":
-        if FUNC not in ["prelec", "kt", "ge"]:
-            raise Exception(f"CPT weighting function is missing or invalid.")
-        
-    if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
-        model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
-        model_dir = f"data/{MODEL}/{model_str}" 
+    if DATA_DIR != "":
+        model_dir = DATA_DIR
     else:
-        model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
-        model_dir = f"data/{MODEL}/{model_str}"
+        # check that a valid model is passed
+        if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
+            raise Exception(f"Model name is invalid.")
+        
+        if MODEL == "cpt":
+            if FUNC not in ["prelec", "kt", "ge"]:
+                raise Exception(f"CPT weighting function is missing or invalid.")
+            
+        if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
+            model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
+            model_dir = f"data/{MODEL}/{model_str}" 
+        else:
+            model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
+            model_dir = f"data/{MODEL}/{model_str}"
     
     file_list = os.listdir(model_dir+"/raw")
     with Pool(MAX_WORKERS) as pool:
