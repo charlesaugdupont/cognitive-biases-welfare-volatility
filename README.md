@@ -131,7 +131,7 @@ uv run lambda_bifurcation.py --beta 0.95
 
 Results are saved to `data/lambda_bifurcation/lambda_bifurcation_<beta_decimals>/raw/`.
 
-### Alpha Versus Gamma Sweep — Figure 10 (`gamma_alpha.py`)
+### Alpha Versus Gamma Sweep — Figure 9 (`gamma_alpha.py`)
 
 Runs a 24×24 grid sweep over `alpha` (wealth preference) and `gamma` (probability weighting) at fixed `lambda=2.5`, `rate=4.0`, `A=0.8`. Use `--sweep-gamma true` (default) for the CPT sweep or `--sweep-gamma false` for a PT alpha-only sweep.
 
