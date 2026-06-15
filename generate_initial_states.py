@@ -19,7 +19,7 @@ if __name__ == "__main__":
     for i in range(2):
         scaled_states[:, i] = states[:, i] * (GRID_SIZE - 1) + 1
 
-    save_path = f"initial_states.pickle"
+    save_path = f"data/initial_states.pickle"
     with open(save_path, "wb") as f:
         pickle.dump(scaled_states, f)
 

@@ -9,7 +9,6 @@ import os
 # constants
 THETA = 0.88
 ETA = 0.88
-BETA = 0.95
 P_H_INCREASE = 0.95
 P_H_DECREASE = 0.05
 SEED = 42
@@ -52,9 +51,20 @@ def unpack_and_dequantize(data: np.ndarray, grid_size: int, dtype=np.uint16):
     else:
         raise ValueError("data must be an integer array.")
 
-def process_row(row, n_steps, model, grid_size, initial_states):
+def process_row(row, n_steps, model, grid_size, initial_states, output_dir, beta, func=None):
     # unpack parameter set
     alpha, gamma, lambduh, rate, A = row
+
+
+    output_file_name = os.path.join(output_dir, f"{alpha}_{gamma}_{lambduh}_{rate}_{A}.pickle")
+    if os.path.exists(output_file_name):
+        return output_file_name
+
+    weighting_function = probability_weighting
+    if func == "prelec":
+        weighting_function = probability_weighting_prelec
+    elif func == "ge":
+        weighting_function = probability_weighting_goldstein_einhorn
 
     # compute policy
     policy, params = compute_optimal_policy(
@@ -69,7 +79,8 @@ def process_row(row, n_steps, model, grid_size, initial_states):
         rate=rate,
         A=A,
         theta=THETA if model in ["pt", "cpt"] else 1.0,
-        beta=BETA
+        beta=beta,
+        weighting_function=weighting_function
     )
 
     # run agent simulations
@@ -83,7 +94,6 @@ def process_row(row, n_steps, model, grid_size, initial_states):
         "policy": policy.astype(np.uint8),
         "storage_dtype_info": str(storage_dtype)
     }
-    output_file_name = os.path.join(model, f"{alpha}_{gamma}_{lambduh}_{rate}_{A}.pickle")
     with open(output_file_name, 'wb') as f:
         pickle.dump(result, f)
 
@@ -92,42 +102,54 @@ def process_row(row, n_steps, model, grid_size, initial_states):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n-steps", type=int, default=5000)
-    parser.add_argument("--max-workers", type=int, default=6)
+    parser.add_argument("--max-workers", type=int, default=8)
     parser.add_argument("--model", type=str, default="cpt")
     parser.add_argument("--grid-size", type=int, default=200)
+    parser.add_argument("--beta", type=float, required=True)
+    parser.add_argument("--cpt-weight-function", type=str)
     args = parser.parse_args()
 
     N_STEPS = args.n_steps
     MAX_WORKERS = args.max_workers
     MODEL = args.model
     GRID_SIZE = args.grid_size
+    BETA = args.beta
+    FUNC = args.cpt_weight_function
     
     # check that a valid model is passed
-    if MODEL not in ["cpt", "pt", "eut"]:
-        raise Exception(f"Model must be one of: 'cpt', 'pt', 'eut'")
+    if MODEL not in ["cpt", "eut", "pt"]:
+        raise Exception(f"Model name is invalid.")
+    
+    if MODEL == "cpt":
+        if FUNC not in ["prelec", "kt", "ge"]:
+            raise Exception(f"CPT weighting function is missing or invalid.")
     
     # load initial agent states
-    initial_states_path = "initial_states.pickle"
+    initial_states_path = "data/initial_states.pickle"
     if not os.path.exists(initial_states_path):
         raise Exception("Please generate initial agent states with: uv run generate_initial_states.py [--n-agents] [--grid-size] [--seed]")
     with open(initial_states_path, "rb") as f:
         initial_states = pickle.load(f)
     
     # load parameter samples
-    samples_path = f"{MODEL}_samples.pickle"
+    samples_path = f"data/{MODEL}/{MODEL}_samples.pickle"
     if not os.path.exists(samples_path):
-        raise Exception(f"Please a sample of parameter values with: uv run generate_parameter_sample.py --model {MODEL} [--n-samples]  [--seed]")
+        raise Exception(f"Please generate a sample of parameter values with: uv run generate_parameter_sample.py --model {MODEL} [--n-samples]  [--seed]")
     with open(samples_path, "rb") as f:
         samples = pickle.load(f)
 
     # verify that we do not overwrite data
-    if not os.path.exists(MODEL):
-        os.makedirs(MODEL)
+    if MODEL in ["eut", "pt"]:
+        output_dir = f"data/{MODEL}/{MODEL}_{str(BETA).split(".")[1]}"
     else:
-        raise Exception(f"Output directory for '{MODEL}' model already exists!")
+        output_dir = f"data/{MODEL}/{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
+
+    raw_dir = output_dir + "/raw"
+    if not os.path.exists(raw_dir):
+        os.makedirs(raw_dir)
 
     # construct set of samples and run simulations in parallel
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(process_row, row, N_STEPS, MODEL, GRID_SIZE, initial_states) for row in samples]
+        futures = [executor.submit(process_row, row, N_STEPS, MODEL, GRID_SIZE, initial_states, raw_dir, BETA, FUNC) for row in samples]
         for future in tqdm(as_completed(futures), total=len(futures)):
             output_file_name = future.result()

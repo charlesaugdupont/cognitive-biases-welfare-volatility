@@ -118,7 +118,8 @@ def compute_optimal_policy(
     rate,
     A,
     theta,
-    beta
+    beta,
+    weighting_function
 ):
     if model in ["pt", "cpt"]:
         return value_iteration_pt_cpt(
@@ -132,7 +133,8 @@ def compute_optimal_policy(
             rate,
             A,
             theta,
-            beta
+            beta,
+            weighting_function
         )
     else:
         return value_iteration_eut(
@@ -219,6 +221,7 @@ def value_iteration_pt_cpt(
     A,
     theta,
     beta,
+    weighting_function,
     return_values=False
 ):
     """
@@ -241,10 +244,11 @@ def value_iteration_pt_cpt(
     }
 
     # Rank-dependent cumulative weighting for probabilities
-    cpt_P_increase = probability_weighting(P_H_increase, gamma)
+    cpt_P_increase = weighting_function(P_H_increase, gamma)
     cpt_P_increase_complement = 1 - cpt_P_increase
-    cpt_P_decrease_complement = probability_weighting(1 - P_H_decrease, gamma)
-    cpt_P_decrease = 1 - cpt_P_decrease_complement
+
+    cpt_P_decrease = weighting_function(P_H_decrease, gamma)
+    cpt_P_decrease_complement = 1 - cpt_P_decrease
 
     w_vals, h_vals = np.arange(1, N + 1), np.arange(1, N + 1)
     W, H = np.meshgrid(w_vals, h_vals, indexing='ij')

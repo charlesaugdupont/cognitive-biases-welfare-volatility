@@ -17,10 +17,11 @@ def process_file(f_name, directory, power_threshold_ratio=0.20, discard_steps=30
     with open(os.path.join(directory, f_name), "rb") as f:
         res = pickle.load(f)
 
-    grid_size = res["params"]["N"]
+    params = res["params"]
+    grid_size = params["N"]
     w = unpack_and_dequantize(res["wealth"][:, discard_steps:], grid_size=grid_size)
     h = unpack_and_dequantize(res["health"][:, discard_steps:], grid_size=grid_size)
-    u = utility(w, h, res["params"]["alpha"])
+    u = utility(w, h, params["alpha"])
 
     dominant_frequencies = np.full(w.shape[0], np.nan)
     dominant_amplitudes = np.full(w.shape[0], np.nan)
@@ -67,25 +68,47 @@ def process_file(f_name, directory, power_threshold_ratio=0.20, discard_steps=30
 
     return {
         "frequencies": dominant_frequencies, 
-        "amplitudes": dominant_amplitudes
+        "amplitudes": dominant_amplitudes,
+        "params": params
     }
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="cpt")
-    parser.add_argument("--max-workers", type=int, default=6)
+    parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--beta", type=float, required=False, default=0.95)
+    parser.add_argument("--cpt-weight-function", type=str)
+    parser.add_argument("--max-workers", type=int, default=8)
+    parser.add_argument("--data-dir", required=False, default="")
     args = parser.parse_args()
 
     MAX_WORKERS = args.max_workers
+    BETA = args.beta
+    FUNC = args.cpt_weight_function
     MODEL = args.model
+    DATA_DIR = args.data_dir
 
-    if not os.path.exists(MODEL):
-        raise Exception(f"Please perform experiments before running this script with: uv run experiment.py [--model] [--n-steps] [--max-workers]  [--grid-size]")
+    if DATA_DIR != "":
+        model_dir = DATA_DIR
+    else:
+        # check that a valid model is passed
+        if MODEL not in ["cpt", "eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
+            raise Exception(f"Model name is invalid.")
+        
+        if MODEL == "cpt":
+            if FUNC not in ["prelec", "kt", "ge"]:
+                raise Exception(f"CPT weighting function is missing or invalid.")
+            
+        if MODEL in ["eut", "pt", "lambda_bifurcation", "gamma_alpha"]:
+            model_str = f"{MODEL}_{str(BETA).split(".")[1]}"
+            model_dir = f"data/{MODEL}/{model_str}" 
+        else:
+            model_str = f"{MODEL}_{FUNC}_{str(BETA).split(".")[1]}"
+            model_dir = f"data/{MODEL}/{model_str}"
     
-    file_list = os.listdir(MODEL)
+    file_list = os.listdir(model_dir+"/raw")
     with Pool(MAX_WORKERS) as pool:
-        process_func = partial(process_file, directory=MODEL)
+        process_func = partial(process_file, directory=model_dir+"/raw")
         results = list(tqdm(pool.imap(process_func, file_list), total=len(file_list)))
 
-    with open(f"{MODEL}_dominant_frequencies_amplitudes.pickle", "wb") as f:
+    with open(f"{model_dir}/dominant_frequencies_amplitudes.pickle", "wb") as f:
         pickle.dump(results, f)

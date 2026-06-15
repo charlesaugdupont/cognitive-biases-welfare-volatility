@@ -6,7 +6,7 @@ import pickle
 PARAMETER_RANGES = {
     "alpha":        [0.30, 0.70],
     "gamma":        [0.50, 0.80],
-    "lambda":       [1.50, 3.00],
+    "lambda":       [1.00, 2.50],
     "rate":         [1.00, 5.00],
     "A":            [0.05, 0.95]
 }
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         else:
             scaled_samples[:, i] = samples[:, i] * (high - low) + low
 
-    save_path = f"{MODEL}_samples.pickle"
+    save_path = f"data/{MODEL}/{MODEL}_samples.pickle"
     with open(save_path, "wb") as f:
         pickle.dump(scaled_samples, f)
 
